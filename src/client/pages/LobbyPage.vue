@@ -32,7 +32,7 @@ watch(
     if (!urlCode) return
     if (connCode === urlCode) return
     if (!nickname.value) {
-      router.replace('/')
+      router.replace(`/?code=${urlCode}`)
       return
     }
     game.send({

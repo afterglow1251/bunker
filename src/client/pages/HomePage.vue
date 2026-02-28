@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { Loader2, Sun, Moon } from 'lucide-vue-next'
 import { useTheme } from '@/composables/useTheme'
@@ -12,6 +12,7 @@ import Input from '@/components/ui/Input.vue'
 import Button from '@/components/ui/Button.vue'
 
 const router = useRouter()
+const route = useRoute()
 useWebSocket()
 const game = useGameStore()
 const { theme, toggle: toggleTheme } = useTheme()
@@ -21,6 +22,15 @@ const roomCode = ref('')
 const showJoin = ref(false)
 const isLoading = ref(false)
 const error = ref('')
+
+// Pre-fill room code from ?code= query param (e.g. redirect from /lobby/:code without nickname)
+onMounted(() => {
+  const code = route.query.code as string | undefined
+  if (code) {
+    roomCode.value = code.toUpperCase()
+    showJoin.value = true
+  }
+})
 
 watch(() => game.room, (room) => {
   if (isLoading.value && room) {
