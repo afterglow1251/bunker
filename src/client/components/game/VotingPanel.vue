@@ -18,17 +18,18 @@ const myVote = ref<string | null>(null)
 const votes = computed(() => game.room?.votes ?? {})
 const totalVotes = computed(() => Object.values(votes.value).reduce((a, b) => a + b, 0))
 
+const isRevote = computed(() => (game.room as any)?.revoteTargets !== null && game.revoteTargets !== null)
+
 const candidates = computed(() => {
-  return game.revoteTargets
-    ? game.alivePlayers.filter(p => game.revoteTargets!.includes(p.id))
-    : game.alivePlayers.filter(p => p.id !== game.playerId)
+  // Voting is always open — can vote for any alive player (including self per rules)
+  return game.alivePlayers
 })
 
 const canPass = computed(() =>
-  game.currentRound === 1 && !game.revoteTargets
+  game.currentRound === 1 && !isRevote.value
 )
 
-const maxTime = computed(() => game.room?.settings.votingTime ?? 60)
+const maxTime = computed(() => game.room?.settings.votingTime ?? 15)
 const progressValue = computed(() => maxTime.value > 0 ? (timer.value / maxTime.value) * 100 : 0)
 
 function handleVote(targetPlayerId: string) {
@@ -60,8 +61,8 @@ function handlePass() {
     </CardHeader>
 
     <CardContent class="flex flex-col gap-2">
-      <p v-if="game.revoteTargets" class="text-xs text-amber-400 mb-1">
-        Переголосування між лідерами
+      <p v-if="isRevote" class="text-xs text-amber-400 mb-1">
+        Переголосування
       </p>
 
       <p v-if="game.pendingDoubleElimination" class="text-xs text-red-400 mb-1">
@@ -102,6 +103,9 @@ function handlePass() {
 
       <p v-if="myVote" class="text-xs text-muted-foreground text-center mt-2">
         Ви проголосували. Можете змінити голос до кінця таймера.
+      </p>
+      <p v-else class="text-xs text-red-400/70 text-center mt-2">
+        Якщо не проголосуєте — голос піде проти вас!
       </p>
     </CardContent>
   </Card>

@@ -89,6 +89,7 @@ export const gameEngine = {
     room.revoteTargets = null
     room.justifiedThisRound = []
     room.revoteCount = 0
+    room.previousRevoteCandidates = []
     room.eliminationsThisRound = 0
 
     // Determine how many eliminations this round
@@ -232,19 +233,20 @@ export const gameEngine = {
 
   // ── Voting ──
 
-  startVoting(room: Room, candidates?: string[]) {
+  startVoting(room: Room, isRevote = false) {
     room.phase = 'voting'
     voteManager.resetVotes(room)
 
-    if (candidates) {
-      room.revoteTargets = candidates
+    // Revotes are OPEN — no candidate restriction
+    if (!isRevote) {
+      room.revoteTargets = null
     }
 
     broadcast(room.code, {
       type: 'VOTING_PHASE',
       payload: {
         timeLimit: room.settings.votingTime,
-        candidates: room.revoteTargets ?? undefined,
+        candidates: undefined, // always open
       },
     })
 
@@ -255,9 +257,20 @@ export const gameEngine = {
         broadcast(room.code, { type: 'TIMER_TICK', payload: { secondsRemaining: remaining } })
       },
       () => {
+        // Auto-vote against self for players who didn't vote
+        this.autoVoteAbstainers(room)
         this.resolveVoting(room)
       },
     )
+  },
+
+  autoVoteAbstainers(room: Room) {
+    const alivePlayers = room.players.filter(p => p.isAlive)
+    for (const player of alivePlayers) {
+      if (room.votes[player.id] === undefined) {
+        room.votes[player.id] = player.id // vote against self
+      }
+    }
   },
 
   castVote(room: Room, voterId: string, targetId: string): boolean {
@@ -280,7 +293,7 @@ export const gameEngine = {
   castVotePass(room: Room, voterId: string): boolean {
     if (room.phase !== 'voting') return false
     if (room.currentRound !== 1) return false
-    if (room.revoteTargets !== null) return false // can't pass during revote
+    if (room.revoteCount > 0) return false // can't pass during revote
 
     const success = voteManager.castVote(room, voterId, '__PASS__')
     if (!success) return false
@@ -301,14 +314,13 @@ export const gameEngine = {
   resolveVoting(room: Room) {
     room.phase = 'vote_resolution'
 
-    // Check for pass majority (round 1 only)
-    if (room.currentRound === 1 && room.revoteTargets === null) {
+    // Check for pass majority (round 1 only, first vote)
+    if (room.currentRound === 1 && room.revoteCount === 0) {
       const counts = voteManager.getVoteCounts(room)
       const passVotes = counts['__PASS__'] || 0
       const totalVotes = Object.values(counts).reduce((a, b) => a + b, 0)
 
       if (passVotes > totalVotes / 2) {
-        // Majority passed — skip elimination, double next round
         room.pendingDoubleElimination = true
         room.votePassUsed = true
         broadcast(room.code, { type: 'VOTE_PASS_RESULT', payload: { passed: true } })
@@ -320,39 +332,71 @@ export const gameEngine = {
     // Check 70% supermajority
     const supermajorityResult = voteManager.checkSupermajority(room)
     if (supermajorityResult) {
-      // Instant elimination without justification
       this.eliminatePlayer(room, supermajorityResult, 'supermajority')
       return
     }
 
     const result = voteManager.resolveVotes(room)
 
+    // Is this a revote?
+    if (room.revoteCount > 0) {
+      this.resolveRevoteResult(room, result)
+      return
+    }
+
+    // First vote
     if (result.isTie) {
-      this.handleRevote(room, result.tiedPlayerIds)
+      this.handleTie(room, result.tiedPlayerIds)
       return
     }
 
     if (result.eliminatedId) {
-      // Check if player already had justification this round
       if (room.justifiedThisRound.includes(result.eliminatedId)) {
         this.eliminatePlayer(room, result.eliminatedId, 'vote')
       } else {
-        // Give justification speech
         this.startJustificationSpeech(room, result.eliminatedId)
       }
     } else {
-      // No one eliminated (all immune), start next round
       this.checkNextEliminationOrRound(room)
     }
   },
 
-  // ── Revote Handling ──
+  // ── Revote result (official rules) ──
 
-  handleRevote(room: Room, tiedPlayerIds: string[]) {
-    room.revoteCount++
+  resolveRevoteResult(room: Room, result: { eliminatedId: string | null; isTie: boolean; tiedPlayerIds: string[] }) {
+    const prev = room.previousRevoteCandidates
 
-    if (room.revoteCount > 1) {
-      // Second tie with same candidates
+    if (result.isTie) {
+      const tiedIds = result.tiedPlayerIds
+      // Check if new player appeared in the tie
+      const newPlayers = tiedIds.filter(id => !prev.includes(id))
+
+      if (newPlayers.length > 0) {
+        // New candidate(s) get justification, then another revote
+        const needJustification = newPlayers.filter(id => !room.justifiedThisRound.includes(id))
+        if (needJustification.length > 0) {
+          room.phase = 'justification_speech'
+          speechManager.startSpeechRound(
+            room,
+            needJustification,
+            'justification',
+            DEFAULT_SPEECH_TIMERS.justification,
+            () => {
+              room.justifiedThisRound.push(...needJustification)
+              room.previousRevoteCandidates = tiedIds
+              room.revoteCount++
+              this.startVoting(room, true)
+            },
+          )
+        } else {
+          room.previousRevoteCandidates = tiedIds
+          room.revoteCount++
+          this.startVoting(room, true)
+        }
+        return
+      }
+
+      // Same candidates tied again
       if (room.currentRound === 1 && !room.votePassUsed) {
         // Round 1: skip + double next
         room.pendingDoubleElimination = true
@@ -360,16 +404,43 @@ export const gameEngine = {
         setTimeout(() => this.startRound(room), 3000)
       } else {
         // Other rounds: eliminate all tied
-        this.eliminateMultiple(room, tiedPlayerIds)
+        this.eliminateMultiple(room, tiedIds)
       }
       return
     }
 
-    // Give justification to tied players who haven't had one
+    if (result.eliminatedId) {
+      const eid = result.eliminatedId
+      // Was this player in the previous candidates?
+      if (prev.includes(eid)) {
+        // Votes changed among existing candidates — eliminate leader
+        this.eliminatePlayer(room, eid, 'vote')
+      } else {
+        // New player leads
+        if (room.justifiedThisRound.includes(eid)) {
+          this.eliminatePlayer(room, eid, 'vote')
+        } else {
+          this.startJustificationSpeech(room, eid)
+        }
+      }
+    } else {
+      this.checkNextEliminationOrRound(room)
+    }
+  },
+
+  // ── Tie Handling (first vote) ──
+
+  handleTie(room: Room, tiedPlayerIds: string[]) {
+    // Give justification to each tied player who hasn't had one
     const needJustification = tiedPlayerIds.filter(id => !room.justifiedThisRound.includes(id))
 
+    const startRevote = () => {
+      room.revoteCount++
+      room.previousRevoteCandidates = tiedPlayerIds
+      this.startVoting(room, true)
+    }
+
     if (needJustification.length > 0) {
-      // Start justification speeches, then revote
       room.phase = 'justification_speech'
       speechManager.startSpeechRound(
         room,
@@ -378,16 +449,15 @@ export const gameEngine = {
         DEFAULT_SPEECH_TIMERS.justification,
         () => {
           room.justifiedThisRound.push(...needJustification)
-          this.startVoting(room, tiedPlayerIds)
+          startRevote()
         },
       )
     } else {
-      // All already justified, go straight to revote
-      this.startVoting(room, tiedPlayerIds)
+      startRevote()
     }
   },
 
-  // ── Justification Speech ──
+  // ── Justification Speech (single player, <70%) ──
 
   startJustificationSpeech(room: Room, playerId: string) {
     room.phase = 'justification_speech'
@@ -399,8 +469,10 @@ export const gameEngine = {
       'justification',
       DEFAULT_SPEECH_TIMERS.justification,
       () => {
-        // After justification, revote on this player only
-        this.startVoting(room, [playerId])
+        // After justification — open revote
+        room.revoteCount++
+        room.previousRevoteCandidates = [playerId]
+        this.startVoting(room, true)
       },
     )
   },
@@ -501,6 +573,7 @@ export const gameEngine = {
       // Need another elimination cycle
       room.revoteTargets = null
       room.revoteCount = 0
+      room.previousRevoteCandidates = []
       room.justifiedThisRound = []
       this.startAccusationSpeeches(room)
       return

@@ -4,7 +4,7 @@ export const ROOM_CODE_LENGTH = 5
 
 export const DEFAULT_TIMERS = {
   discussion: 120,
-  voting: 60,
+  voting: 15,
   catastropheReveal: 10,
   eliminationReveal: 8,
 }

@@ -56,6 +56,7 @@ export interface Room {
   eliminationsThisRound: number
   eliminationsRequiredThisRound: number
   revoteCount: number
+  previousRevoteCandidates: string[]
 }
 
 export interface GameOverData {

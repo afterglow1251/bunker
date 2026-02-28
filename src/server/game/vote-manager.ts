@@ -16,11 +16,6 @@ export const voteManager = {
     const target = room.players.find(p => p.id === targetId)
     if (!target || !target.isAlive) return false
 
-    if (voterId === targetId) return false
-
-    // If revote, check target is in candidates
-    if (room.revoteTargets && !room.revoteTargets.includes(targetId)) return false
-
     room.votes[voterId] = targetId
     return true
   },

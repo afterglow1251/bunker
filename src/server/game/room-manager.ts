@@ -44,6 +44,7 @@ export const roomManager = {
       eliminationsThisRound: 0,
       eliminationsRequiredThisRound: 1,
       revoteCount: 0,
+      previousRevoteCandidates: [],
     }
 
     rooms.set(code, room)
