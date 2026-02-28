@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch, ref, onMounted, onUnmounted } from 'vue'
+import { computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ChevronLeft, Play, Settings, Users } from 'lucide-vue-next'
 import { MIN_PLAYERS, MAX_PLAYERS } from '../../shared'
@@ -43,18 +43,6 @@ watch(
   { immediate: true }
 )
 
-// Elapsed time in lobby
-const elapsed = ref(0)
-let timer: ReturnType<typeof setInterval> | null = null
-onMounted(() => {
-  timer = setInterval(() => elapsed.value++, 1000)
-})
-onUnmounted(() => { if (timer) clearInterval(timer) })
-const elapsedFormatted = computed(() => {
-  const m = Math.floor(elapsed.value / 60)
-  const s = elapsed.value % 60
-  return `${m}:${String(s).padStart(2, '0')}`
-})
 
 // Navigate to game when it starts
 watch(() => game.phase, (phase) => {
@@ -115,8 +103,8 @@ watch(() => game.phase, (phase) => {
         мінімум {{ MIN_PLAYERS }} гравців
       </p>
 
-      <p class="text-xs text-muted-foreground text-center font-mono tabular-nums">
-        {{ !game.isHost ? 'очікуємо' : 'в лобі' }} {{ elapsedFormatted }}
+      <p v-if="!game.isHost" class="text-xs text-muted-foreground text-center">
+        Очікуємо початку гри...
       </p>
     </div>
   </div>
