@@ -1,6 +1,5 @@
 import { Elysia } from 'elysia'
 import { cors } from '@elysiajs/cors'
-import { staticPlugin } from '@elysiajs/static'
 import { config } from './config'
 import { apiRoutes } from './routes/api'
 import { wsHandler } from './ws/handler'
@@ -15,12 +14,19 @@ const app = new Elysia()
   .use(apiRoutes)
   .use(wsHandler)
 
-// Serve static files in production
+// Serve static files + SPA fallback in production
 if (hasClientBuild) {
-  app.use(staticPlugin({ assets: clientDir, prefix: '/' }))
+  const indexHtml = join(clientDir, 'index.html')
 
-  // SPA fallback — serve index.html for non-API/non-WS routes
-  app.get('*', () => Bun.file(join(clientDir, 'index.html')))
+  app.get('*', ({ path }) => {
+    // Try to serve the static file first
+    const filePath = join(clientDir, path)
+    if (path !== '/' && existsSync(filePath)) {
+      return Bun.file(filePath)
+    }
+    // SPA fallback — return index.html for all other routes
+    return Bun.file(indexHtml)
+  })
 }
 
 app.listen(config.port)
