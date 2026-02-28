@@ -58,6 +58,9 @@ export const gameEngine = {
     room.votePassUsed = false
 
     const playerOrder = room.players.map(p => p.id)
+    const allPlayersData = room.players.map(p => ({
+      id: p.id, nickname: p.nickname, traits: p.traits, actionCard: p.actionCard,
+    }))
     for (const player of room.players) {
       sendTo(player.id, {
         type: 'GAME_STARTED',
@@ -67,6 +70,7 @@ export const gameEngine = {
           yourTraits: player.traits,
           yourActionCard: player.actionCard,
           playerOrder,
+          ...(player.id === room.hostId ? { allPlayersData } : {}),
         },
       })
     }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { MessageCircle, Radiation } from 'lucide-vue-next'
+import { MessageCircle, Radiation, TableProperties } from 'lucide-vue-next'
 import type { PlayerTraits } from '../../shared'
 import { useWebSocket } from '@/composables/useWebSocket'
 import { useGameStore } from '@/stores/game'
@@ -20,6 +20,7 @@ import DiscussionTimer from '@/components/game/DiscussionTimer.vue'
 import RoundIndicator from '@/components/game/RoundIndicator.vue'
 import ChatPanel from '@/components/game/ChatPanel.vue'
 import SpeechTimer from '@/components/game/SpeechTimer.vue'
+import HostPanel from '@/components/game/HostPanel.vue'
 
 const router = useRouter()
 useWebSocket()
@@ -28,6 +29,7 @@ const chat = useChatStore()
 const { formatted } = useTimer()
 
 const chatOpen = ref(false)
+const hostPanelOpen = ref(false)
 
 const eliminationData = ref<{
   playerId: string
@@ -176,6 +178,18 @@ const isSpeechPhase = computed(() =>
       <footer v-if="showTopBar" class="sticky bottom-0 z-20 bg-background/80 backdrop-blur-sm border-t px-4 py-2">
         <div class="max-w-5xl mx-auto flex items-center justify-between">
           <ActionCardModal />
+
+          <div class="flex items-center gap-2">
+            <Sheet v-if="game.isHost && game.allPlayersData" :open="hostPanelOpen" @update:open="hostPanelOpen = $event" side="bottom" content-class="p-0 flex flex-col max-h-[70vh]">
+              <template #trigger>
+                <Button variant="outline" size="sm" class="gap-2" @click="hostPanelOpen = true">
+                  <TableProperties class="size-4" />
+                  <span class="hidden sm:inline">Панель</span>
+                </Button>
+              </template>
+              <HostPanel />
+            </Sheet>
+          </div>
 
           <Sheet :open="chatOpen" @update:open="chatOpen = $event" content-class="p-0 flex flex-col">
             <template #trigger>

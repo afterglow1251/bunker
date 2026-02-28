@@ -5,6 +5,13 @@ import type {
   ActionCard, PlayerTraits, TraitType, GameOverData,
   ServerMessage,
 } from '../../shared'
+
+export interface HostPlayerData {
+  id: string
+  nickname: string
+  traits: PlayerTraits
+  actionCard: ActionCard
+}
 import { clientId, nickname } from './auth'
 import * as ws from '../services/ws'
 
@@ -30,6 +37,7 @@ export const useGameStore = defineStore('game', () => {
   const speechSpeakerIndex = ref(0)
   const speechTotalSpeakers = ref(0)
   const pendingDoubleElimination = ref(false)
+  const allPlayersData = ref<HostPlayerData[] | null>(null)
 
   // ── computed ──
   const isHost = computed(() => room.value?.hostId === playerId.value)
@@ -88,6 +96,9 @@ export const useGameStore = defineStore('game', () => {
         bunkerDescription.value = msg.payload.bunkerDescription
         myTraits.value = msg.payload.yourTraits
         myActionCard.value = msg.payload.yourActionCard
+        if (msg.payload.allPlayersData) {
+          allPlayersData.value = msg.payload.allPlayersData as HostPlayerData[]
+        }
         phase.value = 'catastrophe_reveal'
         break
 
@@ -276,6 +287,7 @@ export const useGameStore = defineStore('game', () => {
     speechSpeakerIndex.value = 0
     speechTotalSpeakers.value = 0
     pendingDoubleElimination.value = false
+    allPlayersData.value = null
     ws.setReconnectInfo(null)
   }
 
@@ -286,6 +298,7 @@ export const useGameStore = defineStore('game', () => {
     revoteTargets, gameOverData, isConnected, playerId, roomCode,
     traitsToRevealThisRound, speechPhase, speechSpeakerId,
     speechSpeakerIndex, speechTotalSpeakers, pendingDoubleElimination,
+    allPlayersData,
     // computed
     isHost, isMyTurn, myPlayer, alivePlayers, eliminatedPlayers,
     // actions

@@ -19,7 +19,7 @@ export type ServerMessage =
   | { type: 'JOINED'; payload: { player: Player; room: ClientRoom } }
   | { type: 'PLAYER_JOINED'; payload: { player: PublicPlayer } }
   | { type: 'PLAYER_LEFT'; payload: { playerId: string } }
-  | { type: 'GAME_STARTED'; payload: { catastrophe: string; bunkerDescription: string; yourTraits: Player['traits']; yourActionCard: ActionCard; playerOrder: string[] } }
+  | { type: 'GAME_STARTED'; payload: { catastrophe: string; bunkerDescription: string; yourTraits: Player['traits']; yourActionCard: ActionCard; playerOrder: string[]; allPlayersData?: Array<{ id: string; nickname: string; traits: Player['traits']; actionCard: ActionCard }> } }
   | { type: 'ROUND_STARTED'; payload: { roundNumber: number; currentPlayerId: string; traitsToReveal: number } }
   | { type: 'TRAIT_REVEALED'; payload: { playerId: string; traitType: TraitType; value: string | number } }
   | { type: 'DISCUSSION_PHASE'; payload: { timeLimit: number } }
