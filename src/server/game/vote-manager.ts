@@ -4,6 +4,7 @@ export const voteManager = {
   castVote(room: Room, voterId: string, targetId: string): boolean {
     const voter = room.players.find(p => p.id === voterId)
     if (!voter || !voter.isAlive) return false
+    if (voter.isHost) return false
 
     // Allow __PASS__ as special target in round 1
     if (targetId === '__PASS__') {
@@ -40,7 +41,7 @@ export const voteManager = {
   },
 
   allVotesCast(room: Room): boolean {
-    const alivePlayers = room.players.filter(p => p.isAlive && p.isConnected)
+    const alivePlayers = room.players.filter(p => p.isAlive && p.isConnected && !p.isHost)
     return alivePlayers.every(p => room.votes[p.id] !== undefined)
   },
 

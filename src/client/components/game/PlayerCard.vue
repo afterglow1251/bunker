@@ -23,10 +23,10 @@ const isDisconnected = computed(() => !props.player.isConnected)
 <template>
   <Card
     :class="cn(
-      'relative transition-all duration-300 py-3',
-      isCurrentTurn && 'border-amber-500/60 shadow-[0_0_12px_rgba(245,158,11,0.15)]',
-      isMe && 'border-blue-500/40',
-      isEliminated && 'opacity-50 grayscale',
+      'relative transition-all duration-300 py-3 border-amber-900/20 bg-card/80 backdrop-blur-sm',
+      isCurrentTurn && 'border-amber-500/60 border-glow-pulse',
+      isMe && !isCurrentTurn && 'border-blue-500/30 shadow-[0_0_12px_rgba(59,130,246,0.1)]',
+      isEliminated && 'opacity-40 grayscale',
       isDisconnected && !isEliminated && 'border-dashed',
     )"
   >
@@ -38,8 +38,9 @@ const isDisconnected = computed(() => !props.player.isConnected)
             <AvatarFallback
               :class="cn(
                 'text-sm font-bold',
-                isCurrentTurn && 'bg-amber-500/20 text-amber-400',
-                isMe && !isCurrentTurn && 'bg-blue-500/20 text-blue-400',
+                isCurrentTurn && 'bg-amber-500/20 text-amber-400 shadow-[0_0_10px_rgba(217,119,6,0.3)]',
+                isMe && !isCurrentTurn && 'bg-blue-500/15 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.2)]',
+                !isCurrentTurn && !isMe && 'bg-amber-950/30 text-amber-500/60',
               )"
             >
               {{ player.nickname.charAt(0).toUpperCase() }}
@@ -61,10 +62,10 @@ const isDisconnected = computed(() => !props.player.isConnected)
             >
               {{ player.nickname }}
             </span>
-            <Badge v-if="isMe" variant="outline" class="text-[10px] px-1.5 py-0">
+            <Badge v-if="isMe" variant="outline" class="text-[10px] px-1.5 py-0 border-blue-500/30 text-blue-400">
               Ви
             </Badge>
-            <span v-if="isCurrentTurn" class="size-2 rounded-full bg-amber-500 animate-pulse" />
+            <span v-if="isCurrentTurn" class="size-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_6px_rgba(217,119,6,0.6)]" />
           </div>
 
           <!-- Traits -->
@@ -75,7 +76,9 @@ const isDisconnected = computed(() => !props.player.isConnected)
               :variant="player.revealedTraits[traitType] !== undefined ? 'secondary' : 'outline'"
               :class="cn(
                 'text-[10px] py-0',
-                player.revealedTraits[traitType] === undefined && 'text-muted-foreground/50 border-dashed',
+                player.revealedTraits[traitType] !== undefined
+                  ? 'bg-amber-950/40 text-amber-400/80 border-amber-900/20'
+                  : 'text-muted-foreground/40 border-dashed border-amber-900/10',
               )"
             >
               {{ player.revealedTraits[traitType] !== undefined

@@ -43,8 +43,8 @@ export const useGameStore = defineStore('game', () => {
   const isHost = computed(() => room.value?.hostId === playerId.value)
   const isMyTurn = computed(() => currentTurnPlayerId.value === playerId.value)
   const myPlayer = computed(() => room.value?.players.find(p => p.id === playerId.value))
-  const alivePlayers = computed(() => room.value?.players.filter(p => p.isAlive) ?? [])
-  const eliminatedPlayers = computed(() => room.value?.players.filter(p => !p.isAlive) ?? [])
+  const alivePlayers = computed(() => room.value?.players.filter(p => p.isAlive && !p.isHost) ?? [])
+  const eliminatedPlayers = computed(() => room.value?.players.filter(p => !p.isAlive && !p.isHost) ?? [])
 
   // ── message handler ──
   function handleMessage(msg: ServerMessage) {
@@ -56,9 +56,11 @@ export const useGameStore = defineStore('game', () => {
         phase.value = msg.payload.room.phase
 
         // Restore personal state if reconnecting mid-game
-        if (msg.payload.player.traits && msg.payload.room.phase !== 'lobby') {
-          myTraits.value = msg.payload.player.traits
-          myActionCard.value = msg.payload.player.actionCard
+        if (msg.payload.room.phase !== 'lobby') {
+          if (!msg.payload.player.isHost) {
+            myTraits.value = msg.payload.player.traits
+            myActionCard.value = msg.payload.player.actionCard
+          }
           catastrophe.value = msg.payload.room.catastrophe
           bunkerDescription.value = msg.payload.room.bunkerDescription
           currentRound.value = msg.payload.room.currentRound
@@ -94,8 +96,12 @@ export const useGameStore = defineStore('game', () => {
       case 'GAME_STARTED':
         catastrophe.value = msg.payload.catastrophe
         bunkerDescription.value = msg.payload.bunkerDescription
-        myTraits.value = msg.payload.yourTraits
-        myActionCard.value = msg.payload.yourActionCard
+        if (msg.payload.yourTraits) {
+          myTraits.value = msg.payload.yourTraits
+        }
+        if (msg.payload.yourActionCard) {
+          myActionCard.value = msg.payload.yourActionCard
+        }
         if (msg.payload.allPlayersData) {
           allPlayersData.value = msg.payload.allPlayersData as HostPlayerData[]
         }
@@ -182,9 +188,6 @@ export const useGameStore = defineStore('game', () => {
         }
         break
 
-      case 'CHAT_MESSAGE':
-        // Handled by chat store
-        break
 
       case 'GAME_OVER':
         gameOverData.value = msg.payload

@@ -20,7 +20,7 @@ const isLow = computed(() => timer.value <= 10)
     <CardContent class="p-4">
       <div class="flex flex-col items-center gap-3">
         <div class="flex items-center gap-2">
-          <MessageCircle class="size-5 text-amber-500" />
+          <MessageCircle :class="['size-5', isLow ? 'text-red-500' : 'text-amber-500']" />
           <span class="text-sm font-medium text-muted-foreground">
             Обговорення
           </span>
@@ -29,7 +29,7 @@ const isLow = computed(() => timer.value <= 10)
         <div
           :class="[
             'text-4xl font-bold font-mono tabular-nums',
-            isLow ? 'text-red-400 animate-pulse' : 'text-foreground'
+            isLow ? 'text-red-400 animate-pulse text-glow-red' : 'text-amber-500 text-glow'
           ]"
         >
           {{ formatted }}

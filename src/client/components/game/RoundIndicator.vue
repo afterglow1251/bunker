@@ -6,7 +6,7 @@ defineProps<{ round: number }>()
 </script>
 
 <template>
-  <Badge variant="outline" class="gap-1.5 px-2.5 py-1 text-xs">
+  <Badge variant="outline" class="gap-1.5 px-2.5 py-1 text-xs border-amber-900/30 text-amber-500/80">
     <Target class="size-3 text-amber-500" />
     Раунд {{ round }}
   </Badge>

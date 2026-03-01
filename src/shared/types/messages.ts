@@ -8,18 +8,18 @@ export type ClientMessage =
   | { type: 'REVEAL_TRAIT'; payload: { traitType: TraitType } }
   | { type: 'CAST_VOTE'; payload: { targetPlayerId: string } }
   | { type: 'CAST_VOTE_PASS'; payload: Record<string, never> }
-  | { type: 'SEND_CHAT'; payload: { text: string } }
   | { type: 'USE_ACTION_CARD'; payload: { cardId: string; targetPlayerId?: string; traitType?: TraitType } }
   | { type: 'KICK_PLAYER'; payload: { playerId: string } }
   | { type: 'UPDATE_SETTINGS'; payload: { settings: Partial<RoomSettings> } }
   | { type: 'SKIP_SPEECH'; payload: Record<string, never> }
+  | { type: 'TRANSFER_HOST'; payload: { newHostId: string } }
 
 // Server → Client
 export type ServerMessage =
   | { type: 'JOINED'; payload: { player: Player; room: ClientRoom } }
   | { type: 'PLAYER_JOINED'; payload: { player: PublicPlayer } }
   | { type: 'PLAYER_LEFT'; payload: { playerId: string } }
-  | { type: 'GAME_STARTED'; payload: { catastrophe: string; bunkerDescription: string; yourTraits: Player['traits']; yourActionCard: ActionCard; playerOrder: string[]; allPlayersData?: Array<{ id: string; nickname: string; traits: Player['traits']; actionCard: ActionCard }> } }
+  | { type: 'GAME_STARTED'; payload: { catastrophe: string; bunkerDescription: string; yourTraits?: Player['traits']; yourActionCard?: ActionCard; playerOrder: string[]; allPlayersData?: Array<{ id: string; nickname: string; traits: Player['traits']; actionCard: ActionCard }> } }
   | { type: 'ROUND_STARTED'; payload: { roundNumber: number; currentPlayerId: string; traitsToReveal: number } }
   | { type: 'TRAIT_REVEALED'; payload: { playerId: string; traitType: TraitType; value: string | number } }
   | { type: 'DISCUSSION_PHASE'; payload: { timeLimit: number } }
@@ -28,7 +28,6 @@ export type ServerMessage =
   | { type: 'PLAYER_ELIMINATED'; payload: { playerId: string; allTraits: Player['traits']; actionCard: ActionCard; reason?: 'supermajority' | 'vote' | 'tie' } }
   | { type: 'TURN_CHANGED'; payload: { currentPlayerId: string } }
   | { type: 'ACTION_CARD_USED'; payload: { playerId: string; card: ActionCard; result?: ActionCardResult } }
-  | { type: 'CHAT_MESSAGE'; payload: { playerId: string; nickname: string; text: string; ts: number } }
   | { type: 'GAME_OVER'; payload: GameOverData }
   | { type: 'TIMER_TICK'; payload: { secondsRemaining: number } }
   | { type: 'SETTINGS_UPDATED'; payload: { settings: RoomSettings } }

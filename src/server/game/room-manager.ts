@@ -190,6 +190,23 @@ export const roomManager = {
     return true
   },
 
+  transferHost(roomCode: string, hostId: string, newHostId: string): boolean {
+    const room = rooms.get(roomCode)
+    if (!room) return false
+    if (room.phase !== 'lobby') return false
+    if (room.hostId !== hostId) return false
+    if (hostId === newHostId) return false
+
+    const oldHost = room.players.find(p => p.id === hostId)
+    const newHost = room.players.find(p => p.id === newHostId)
+    if (!oldHost || !newHost) return false
+
+    oldHost.isHost = false
+    newHost.isHost = true
+    room.hostId = newHostId
+    return true
+  },
+
   updateSettings(roomCode: string, hostId: string, settings: Partial<RoomSettings>): boolean {
     const room = rooms.get(roomCode)
     if (!room) return false

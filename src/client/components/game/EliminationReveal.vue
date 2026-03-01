@@ -19,31 +19,38 @@ const props = defineProps<{
 
 const game = useGameStore()
 const isVisible = ref(false)
+const showTraits = ref(false)
 
 const player = game.room?.players.find(p => p.id === props.playerId)
 const nickname = player?.nickname ?? 'Гравець'
 
 onMounted(() => {
   setTimeout(() => (isVisible.value = true), 100)
+  setTimeout(() => (showTraits.value = true), 600)
 })
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-[50vh] px-4">
+  <div class="flex items-center justify-center min-h-[50vh] px-4 relative">
+    <!-- Red glow background -->
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-red-900/15 rounded-full blur-[100px] animate-pulse" />
+    </div>
+
     <div
       :class="[
-        'w-full max-w-md transition-all duration-700',
+        'w-full max-w-md transition-all duration-700 relative z-10',
         isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
       ]"
     >
-      <Card class="border-2 border-red-900/60 bg-red-950/20 backdrop-blur-sm">
+      <Card class="border-2 border-red-900/50 bg-red-950/20 backdrop-blur-sm border-glow-red">
         <CardHeader class="text-center pb-2">
           <div class="flex justify-center mb-3">
-            <div class="rounded-full bg-red-900/30 p-4">
+            <div class="rounded-full bg-red-900/20 p-4 border border-red-900/30 shadow-[0_0_20px_rgba(220,38,38,0.2)] animate-pulse">
               <Skull class="size-10 text-red-400" />
             </div>
           </div>
-          <CardTitle class="text-xl text-red-400">
+          <CardTitle class="text-xl text-red-400 text-glow-red">
             {{ nickname }} вибуває
           </CardTitle>
         </CardHeader>
@@ -57,14 +64,18 @@ onMounted(() => {
 
           <div class="flex flex-col gap-2">
             <div
-              v-for="traitType in TRAIT_TYPES"
+              v-for="(traitType, index) in TRAIT_TYPES"
               :key="traitType"
-              class="flex items-center justify-between py-1"
+              :class="[
+                'flex items-center justify-between py-1 transition-all duration-500',
+                showTraits ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+              ]"
+              :style="{ transitionDelay: `${index * 100}ms` }"
             >
               <span class="text-sm text-muted-foreground">
                 {{ TRAIT_LABELS[traitType] }}
               </span>
-              <Badge variant="secondary" class="text-xs">
+              <Badge variant="secondary" class="text-xs bg-red-950/40 text-red-300/80 border border-red-900/20">
                 {{ String(allTraits[traitType as keyof PlayerTraits]) }}
               </Badge>
             </div>
@@ -76,7 +87,7 @@ onMounted(() => {
             <span class="text-sm text-muted-foreground">
               Карта дії
             </span>
-            <Badge variant="outline" class="text-xs">
+            <Badge variant="outline" class="text-xs border-red-900/30 text-red-300/80">
               {{ actionCardName || '—' }}
             </Badge>
           </div>

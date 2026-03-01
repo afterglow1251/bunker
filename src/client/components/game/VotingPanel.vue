@@ -21,7 +21,6 @@ const totalVotes = computed(() => Object.values(votes.value).reduce((a, b) => a 
 const isRevote = computed(() => (game.room as any)?.revoteTargets !== null && game.revoteTargets !== null)
 
 const candidates = computed(() => {
-  // Voting is always open — can vote for any alive player (including self per rules)
   return game.alivePlayers
 })
 
@@ -49,10 +48,10 @@ function handlePass() {
       <div class="flex items-center justify-between">
         <CardTitle class="text-base flex items-center gap-2">
           <Vote class="size-4 text-amber-500" />
-          Фаза голосування
+          <span class="text-glow">Фаза голосування</span>
         </CardTitle>
         <div class="flex items-center gap-2">
-          <span class="text-sm font-mono text-muted-foreground">
+          <span class="text-sm font-mono text-amber-500/70">
             {{ formatted }}
           </span>
         </div>
@@ -73,14 +72,17 @@ function handlePass() {
         v-for="player in candidates"
         :key="player.id"
         :variant="myVote === player.id ? 'default' : 'outline'"
-        class="w-full justify-between h-auto py-2.5 px-3"
+        :class="[
+          'w-full justify-between h-auto py-2.5 px-3',
+          myVote === player.id && 'border-glow'
+        ]"
         @click="handleVote(player.id)"
       >
         <div class="flex items-center gap-2">
-          <CheckCircle2 v-if="myVote === player.id" class="size-4 text-emerald-400" />
+          <CheckCircle2 v-if="myVote === player.id" class="size-4 text-amber-300" />
           <span class="text-sm font-medium">{{ player.nickname }}</span>
         </div>
-        <Badge variant="secondary" class="text-xs">
+        <Badge variant="secondary" class="text-xs bg-amber-950/40 text-amber-400/80">
           {{ votes[player.id] ?? 0 }} {{ (votes[player.id] ?? 0) === 1 ? 'голос' : 'голосів' }}
         </Badge>
       </Button>
@@ -93,10 +95,10 @@ function handlePass() {
       >
         <div class="flex items-center gap-2">
           <SkipForward v-if="myVote !== '__PASS__'" class="size-4 text-muted-foreground" />
-          <CheckCircle2 v-else class="size-4 text-emerald-400" />
+          <CheckCircle2 v-else class="size-4 text-amber-300" />
           <span class="text-sm font-medium">Пропустити голосування</span>
         </div>
-        <Badge variant="secondary" class="text-xs">
+        <Badge variant="secondary" class="text-xs bg-amber-950/40 text-amber-400/80">
           {{ votes['__PASS__'] ?? 0 }}
         </Badge>
       </Button>

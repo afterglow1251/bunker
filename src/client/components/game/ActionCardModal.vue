@@ -74,7 +74,7 @@ function onOpenChange(v: boolean) {
         >
           <Zap class="size-4 text-amber-500" />
           <span class="hidden sm:inline">Карта дії</span>
-          <span v-if="!isUsed" class="size-2 rounded-full bg-amber-500 animate-pulse" />
+          <span v-if="!isUsed" class="size-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_6px_rgba(217,119,6,0.6)]" />
         </Button>
       </template>
 
@@ -87,19 +87,20 @@ function onOpenChange(v: boolean) {
       </DialogHeader>
 
       <div class="flex flex-col gap-4">
-        <Badge v-if="isUsed" variant="secondary" class="w-fit">
+        <Badge v-if="isUsed" variant="secondary" class="w-fit bg-amber-950/30 text-amber-400/60">
           Вже використано
         </Badge>
 
         <!-- Player selection -->
         <div v-if="needsPlayer && !isUsed" class="flex flex-col gap-2">
-          <p class="text-sm font-medium">Оберіть гравця:</p>
+          <p class="text-sm font-medium text-amber-500/80">Оберіть гравця:</p>
           <div class="flex flex-wrap gap-2">
             <Button
               v-for="player in otherPlayers"
               :key="player.id"
               :variant="selectedPlayer === player.id ? 'default' : 'outline'"
               size="sm"
+              :class="selectedPlayer === player.id && 'border-glow'"
               @click="selectedPlayer = player.id"
             >
               {{ player.nickname }}
@@ -109,13 +110,14 @@ function onOpenChange(v: boolean) {
 
         <!-- Trait selection -->
         <div v-if="needsTrait && !isUsed" class="flex flex-col gap-2">
-          <p class="text-sm font-medium">Оберіть характеристику:</p>
+          <p class="text-sm font-medium text-amber-500/80">Оберіть характеристику:</p>
           <div class="flex flex-wrap gap-2">
             <Button
               v-for="traitType in TRAIT_TYPES"
               :key="traitType"
               :variant="selectedTrait === traitType ? 'default' : 'outline'"
               size="sm"
+              :class="selectedTrait === traitType && 'border-glow'"
               @click="selectedTrait = traitType as TraitType"
             >
               {{ TRAIT_LABELS[traitType] }}

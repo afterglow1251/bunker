@@ -22,8 +22,12 @@ export const gameEngine = {
 
   // ── Helpers ──
 
+  getGamePlayers(room: Room): Player[] {
+    return room.players.filter(p => !p.isHost)
+  },
+
   getAlivePlayersOrdered(room: Room): Player[] {
-    const alive = room.players.filter(p => p.isAlive)
+    const alive = room.players.filter(p => p.isAlive && !p.isHost)
     if (room.turnOrderReversed) {
       return [...alive].reverse()
     }
@@ -34,9 +38,10 @@ export const gameEngine = {
 
   startGame(room: Room): boolean {
     if (room.phase !== 'lobby') return false
-    if (room.players.length < MIN_PLAYERS) return false
+    const gamePlayers = this.getGamePlayers(room)
+    if (gamePlayers.length < MIN_PLAYERS) return false
 
-    for (const player of room.players) {
+    for (const player of gamePlayers) {
       player.traits = dealTraits()
       player.actionCard = dealActionCard()
       player.isAlive = true
@@ -50,18 +55,20 @@ export const gameEngine = {
     const bunker = dealBunker()
     room.catastrophe = `${catastrophe.name}: ${catastrophe.description}`
     room.bunkerDescription = `${bunker.description} | Місткість: ${bunker.capacity} | Запаси: ${bunker.supplies} | Недолік: ${bunker.flaw}`
-    room.survivorCount = Math.floor(room.players.length / 2)
+    room.survivorCount = Math.floor(gamePlayers.length / 2)
     room.currentRound = 0
     room.eliminatedIds = []
-    room.initialPlayerCount = room.players.length
+    room.initialPlayerCount = gamePlayers.length
     room.pendingDoubleElimination = false
     room.votePassUsed = false
 
-    const playerOrder = room.players.map(p => p.id)
-    const allPlayersData = room.players.map(p => ({
+    const playerOrder = gamePlayers.map(p => p.id)
+    const allPlayersData = gamePlayers.map(p => ({
       id: p.id, nickname: p.nickname, traits: p.traits, actionCard: p.actionCard,
     }))
-    for (const player of room.players) {
+
+    // Send to game players (with their traits)
+    for (const player of gamePlayers) {
       sendTo(player.id, {
         type: 'GAME_STARTED',
         payload: {
@@ -70,10 +77,20 @@ export const gameEngine = {
           yourTraits: player.traits,
           yourActionCard: player.actionCard,
           playerOrder,
-          ...(player.id === room.hostId ? { allPlayersData } : {}),
         },
       })
     }
+
+    // Send to host (observer — no traits, but with allPlayersData)
+    sendTo(room.hostId, {
+      type: 'GAME_STARTED',
+      payload: {
+        catastrophe: room.catastrophe,
+        bunkerDescription: room.bunkerDescription,
+        playerOrder,
+        allPlayersData,
+      },
+    })
 
     room.phase = 'catastrophe_reveal'
 
@@ -269,7 +286,7 @@ export const gameEngine = {
   },
 
   autoVoteAbstainers(room: Room) {
-    const alivePlayers = room.players.filter(p => p.isAlive)
+    const alivePlayers = room.players.filter(p => p.isAlive && !p.isHost)
     for (const player of alivePlayers) {
       if (room.votes[player.id] === undefined) {
         room.votes[player.id] = player.id // vote against self
@@ -564,7 +581,7 @@ export const gameEngine = {
   // ── Post-elimination check ──
 
   checkNextEliminationOrRound(room: Room) {
-    const alivePlayers = room.players.filter(p => p.isAlive)
+    const alivePlayers = room.players.filter(p => p.isAlive && !p.isHost)
 
     // Check win condition
     if (alivePlayers.length <= room.survivorCount) {
@@ -594,8 +611,8 @@ export const gameEngine = {
     timerManager.clear(room.code)
     speechManager.clear(room.code)
 
-    const survivors = room.players.filter(p => p.isAlive)
-    const eliminated = room.players.filter(p => !p.isAlive)
+    const survivors = room.players.filter(p => p.isAlive && !p.isHost)
+    const eliminated = room.players.filter(p => !p.isAlive && !p.isHost)
 
     broadcast(room.code, {
       type: 'GAME_OVER',
@@ -783,6 +800,9 @@ export const gameEngine = {
 
     player.isConnected = false
     broadcast(room.code, { type: 'PLAYER_DISCONNECTED', payload: { playerId } })
+
+    // Host is an observer — skip game-specific disconnect logic
+    if (player.isHost) return
 
     // If it was their turn during trait reveal, skip them
     if (room.phase === 'trait_reveal' && room.currentTurnPlayerId === playerId) {

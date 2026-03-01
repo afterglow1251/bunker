@@ -41,6 +41,8 @@ const progressValue = computed(() =>
   maxTime.value > 0 ? (timer.value / maxTime.value) * 100 : 0
 )
 
+const isLow = computed(() => timer.value <= 5)
+
 function skipSpeech() {
   game.send({ type: 'SKIP_SPEECH', payload: {} })
 }
@@ -51,7 +53,7 @@ function skipSpeech() {
     <CardHeader class="pb-2">
       <div class="flex items-center justify-between">
         <CardTitle class="text-base flex items-center gap-2">
-          <Mic v-if="speaker" class="size-4 text-amber-500" />
+          <Mic v-if="speaker" :class="['size-4', isLow ? 'text-red-500' : 'text-amber-500']" />
           <MicOff v-else class="size-4 text-muted-foreground" />
           {{ phaseLabel }}
         </CardTitle>
@@ -59,25 +61,25 @@ function skipSpeech() {
           <span class="text-xs text-muted-foreground">
             {{ game.speechSpeakerIndex }}/{{ game.speechTotalSpeakers }}
           </span>
-          <span class="text-sm font-mono text-muted-foreground">
+          <span :class="['text-sm font-mono', isLow ? 'text-red-400 text-glow-red' : 'text-amber-500/70']">
             {{ formatted }}
           </span>
         </div>
       </div>
-      <Progress :value="progressValue" class="h-1 mt-2" />
+      <Progress :value="progressValue" :class="['h-1 mt-2', isLow ? '[&>[data-slot=progress-indicator]]:bg-red-500' : '']" />
     </CardHeader>
     <CardContent>
       <div class="flex items-center justify-between">
         <div>
           <p v-if="speaker" class="text-sm">
-            <span class="font-semibold" :class="isSpeaking ? 'text-amber-400' : 'text-foreground'">
+            <span class="font-semibold" :class="isSpeaking ? 'text-amber-400 text-glow' : 'text-foreground'">
               {{ speaker.nickname }}
             </span>
             <span class="text-muted-foreground">
               {{ isSpeaking ? ' — ваша черга говорити' : ' говорить' }}
             </span>
           </p>
-          <p v-else class="text-sm text-muted-foreground">
+          <p v-else class="text-sm text-muted-foreground font-mono">
             Очікування...
           </p>
         </div>

@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { MessageCircle, Radiation, TableProperties } from 'lucide-vue-next'
+import { Radiation, TableProperties } from 'lucide-vue-next'
 import type { PlayerTraits } from '../../shared'
 import { useWebSocket } from '@/composables/useWebSocket'
 import { useGameStore } from '@/stores/game'
-import { useChatStore } from '@/stores/chat'
 import { useTimer } from '@/composables/useTimer'
 import Button from '@/components/ui/Button.vue'
 import Sheet from '@/components/ui/Sheet.vue'
@@ -18,17 +17,14 @@ import EliminationReveal from '@/components/game/EliminationReveal.vue'
 import ActionCardModal from '@/components/game/ActionCardModal.vue'
 import DiscussionTimer from '@/components/game/DiscussionTimer.vue'
 import RoundIndicator from '@/components/game/RoundIndicator.vue'
-import ChatPanel from '@/components/game/ChatPanel.vue'
 import SpeechTimer from '@/components/game/SpeechTimer.vue'
 import HostPanel from '@/components/game/HostPanel.vue'
 
 const router = useRouter()
 useWebSocket()
 const game = useGameStore()
-const chat = useChatStore()
 const { formatted } = useTimer()
 
-const chatOpen = ref(false)
 const hostPanelOpen = ref(false)
 
 const eliminationData = ref<{
@@ -90,23 +86,24 @@ const isSpeechPhase = computed(() =>
 </script>
 
 <template>
-  <div v-if="game.room" class="min-h-screen bg-background relative overflow-hidden">
+  <div v-if="game.room" class="min-h-screen bg-background relative overflow-hidden bg-noise">
     <!-- Background decorative elements -->
     <div class="absolute inset-0 pointer-events-none">
-      <div class="absolute top-0 left-1/4 w-96 h-96 bg-amber-900/5 rounded-full blur-3xl" />
-      <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-900/5 rounded-full blur-3xl" />
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(217,119,6,0.04)_0%,transparent_70%)]" />
+      <div class="absolute top-0 left-1/4 w-96 h-96 bg-amber-900/5 rounded-full blur-[120px]" />
+      <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-950/8 rounded-full blur-[100px]" />
     </div>
 
     <div class="relative z-10 flex flex-col min-h-screen">
       <!-- Top bar -->
-      <header v-if="showTopBar" class="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b px-4 py-2">
+      <header v-if="showTopBar" class="sticky top-0 z-20 bg-background/85 backdrop-blur-md border-b border-amber-900/20 px-4 py-2">
         <div class="max-w-5xl mx-auto flex items-center justify-between gap-2">
           <div class="flex items-center gap-3">
-            <Radiation class="size-5 text-amber-500/80" />
+            <Radiation class="size-5 text-amber-500/80 animate-flicker" />
             <RoundIndicator :round="game.currentRound" />
           </div>
           <div class="flex items-center gap-2">
-            <span v-if="showTimer" class="text-sm font-mono text-muted-foreground">
+            <span v-if="showTimer" class="text-sm font-mono text-amber-500/70">
               {{ formatted }}
             </span>
           </div>
@@ -152,7 +149,7 @@ const isSpeechPhase = computed(() =>
           <div class="flex-1">
             <PlayerCircle />
           </div>
-          <div class="lg:w-80 lg:shrink-0">
+          <div v-if="!game.isHost" class="lg:w-80 lg:shrink-0">
             <VotingPanel />
           </div>
         </div>
@@ -160,8 +157,8 @@ const isSpeechPhase = computed(() =>
         <!-- Vote resolution -->
         <div v-if="game.phase === 'vote_resolution'" class="flex flex-col gap-4 items-center justify-center min-h-[50vh]">
           <PlayerCircle />
-          <p class="text-muted-foreground animate-pulse">
-            Підрахунок голосів...
+          <p class="text-amber-500/50 animate-pulse font-mono">
+            &gt; Підрахунок голосів... _
           </p>
         </div>
 
@@ -175,9 +172,9 @@ const isSpeechPhase = computed(() =>
       </main>
 
       <!-- Bottom bar -->
-      <footer v-if="showTopBar" class="sticky bottom-0 z-20 bg-background/80 backdrop-blur-sm border-t px-4 py-2">
+      <footer v-if="showTopBar" class="sticky bottom-0 z-20 bg-background/85 backdrop-blur-md border-t border-amber-900/20 px-4 py-2">
         <div class="max-w-5xl mx-auto flex items-center justify-between">
-          <ActionCardModal />
+          <ActionCardModal v-if="!game.isHost" />
 
           <div class="flex items-center gap-2">
             <Sheet v-if="game.isHost && game.allPlayersData" :open="hostPanelOpen" @update:open="hostPanelOpen = $event" side="bottom" content-class="p-0 flex flex-col max-h-[70vh]">
@@ -191,26 +188,6 @@ const isSpeechPhase = computed(() =>
             </Sheet>
           </div>
 
-          <Sheet :open="chatOpen" @update:open="chatOpen = $event" content-class="p-0 flex flex-col">
-            <template #trigger>
-              <Button variant="outline" size="sm" class="gap-2" @click="chatOpen = true">
-                <MessageCircle class="size-4" />
-                <span class="hidden sm:inline">Чат</span>
-                <span
-                  v-if="chat.messages.length > 0"
-                  class="size-5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center"
-                >
-                  {{ chat.messages.length > 99 ? '99+' : chat.messages.length }}
-                </span>
-              </Button>
-            </template>
-            <div class="px-4 pt-4">
-              <h3 class="text-foreground font-semibold">Чат гравців</h3>
-            </div>
-            <div class="flex-1 overflow-hidden">
-              <ChatPanel />
-            </div>
-          </Sheet>
         </div>
       </footer>
     </div>

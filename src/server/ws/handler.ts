@@ -118,6 +118,22 @@ export const wsHandler = new Elysia()
               },
             }))
 
+            // If host reconnects mid-game, send allPlayersData
+            if (result.player.isHost && result.room.phase !== 'lobby') {
+              const allPlayersData = result.room.players.map(p => ({
+                id: p.id, nickname: p.nickname, traits: p.traits, actionCard: p.actionCard,
+              }))
+              ws.send(JSON.stringify({
+                type: 'GAME_STARTED',
+                payload: {
+                  catastrophe: result.room.catastrophe ?? '',
+                  bunkerDescription: result.room.bunkerDescription ?? '',
+                  playerOrder: result.room.players.map(p => p.id),
+                  allPlayersData,
+                },
+              }))
+            }
+
             // Notify others of reconnection
             wsConnections.broadcastToRoom(result.room.code, {
               type: 'PLAYER_RECONNECTED',
@@ -196,23 +212,6 @@ export const wsHandler = new Elysia()
           break
         }
 
-        case 'SEND_CHAT': {
-          if (!data.playerId || !data.roomCode) return
-          const player = roomManager.getPlayer(data.playerId)
-          if (!player) return
-          const text = msg.payload.text?.trim()
-          if (!text) return
-          wsConnections.broadcastToRoom(data.roomCode, {
-            type: 'CHAT_MESSAGE',
-            payload: {
-              playerId: data.playerId,
-              nickname: player.nickname,
-              text: text.slice(0, 500),
-              ts: Date.now(),
-            },
-          })
-          break
-        }
 
         case 'USE_ACTION_CARD': {
           if (!data.playerId || !data.roomCode) return
@@ -238,6 +237,17 @@ export const wsHandler = new Elysia()
               kickedWs.close()
             }
             wsConnections.remove(msg.payload.playerId, data.roomCode)
+          }
+          break
+        }
+
+        case 'TRANSFER_HOST': {
+          if (!data.playerId || !data.roomCode) return
+          if (roomManager.transferHost(data.roomCode, data.playerId, msg.payload.newHostId)) {
+            wsConnections.broadcastToRoom(data.roomCode, {
+              type: 'HOST_CHANGED',
+              payload: { newHostId: msg.payload.newHostId },
+            })
           }
           break
         }
@@ -315,7 +325,7 @@ export const wsHandler = new Elysia()
               })
             }
           }
-        } else if (player.isAlive) {
+        } else if (player.isAlive && !player.isHost) {
           // Auto-eliminate after grace period during game
           gameEngine.eliminatePlayer(r, playerId)
         }

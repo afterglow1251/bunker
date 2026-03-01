@@ -17,11 +17,11 @@ const transform = computed(() => `translateX(-${100 - (props.value || 0)}%)`)
     data-slot="progress"
     role="progressbar"
     :aria-valuenow="value"
-    :class="cn('bg-primary/20 relative h-2 w-full overflow-hidden rounded-full', props.class)"
+    :class="cn('bg-amber-950/30 relative h-2 w-full overflow-hidden rounded-full', props.class)"
   >
     <div
       data-slot="progress-indicator"
-      class="bg-primary h-full w-full flex-1 transition-all"
+      class="bg-gradient-to-r from-amber-600 to-amber-500 h-full w-full flex-1 transition-all shadow-[0_0_6px_rgba(217,119,6,0.4)]"
       :style="{ transform }"
     />
   </div>

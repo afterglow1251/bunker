@@ -2,8 +2,7 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { Loader2, Sun, Moon } from 'lucide-vue-next'
-import { useTheme } from '@/composables/useTheme'
+import { Loader2 } from 'lucide-vue-next'
 import { useWebSocket } from '@/composables/useWebSocket'
 import { useGameStore } from '@/stores/game'
 import { clientId, nickname as storedNickname, setNickname as saveNickname } from '@/stores/auth'
@@ -15,7 +14,6 @@ const router = useRouter()
 const route = useRoute()
 useWebSocket()
 const game = useGameStore()
-const { theme, toggle: toggleTheme } = useTheme()
 
 const nicknameInput = ref(storedNickname.value)
 const roomCode = ref('')
@@ -99,28 +97,36 @@ function onRoomCodeInput(val: string) {
 </script>
 
 <template>
-  <div class="min-h-dvh flex flex-col items-center justify-center p-4 relative">
-    <Button variant="ghost" size="icon" class="absolute top-4 right-4" @click="toggleTheme">
-      <Sun v-if="theme === 'dark'" class="size-5" />
-      <Moon v-else class="size-5" />
-    </Button>
+  <div class="min-h-dvh flex flex-col items-center justify-center p-4 relative bg-noise overflow-hidden">
+    <!-- Ambient background -->
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-900/10 rounded-full blur-[120px]" />
+      <div class="absolute bottom-0 right-1/4 w-80 h-80 bg-orange-950/20 rounded-full blur-[100px]" />
+      <div class="absolute top-0 left-0 w-64 h-64 bg-amber-950/10 rounded-full blur-[80px]" />
+    </div>
 
-    <div class="w-full max-w-sm space-y-8">
+    <div class="w-full max-w-sm space-y-8 relative z-10">
       <div class="text-center">
-        <div class="text-8xl mb-3 inline-block">🏚️</div>
-        <h1 class="text-5xl font-extrabold mb-1.5">Бункер</h1>
-        <p class="inline-block rounded-full px-4 py-1.5 text-muted-foreground text-sm bg-secondary border border-border">
-          хто виживе після катастрофи?
+        <!-- Radiation symbol with glow -->
+        <div class="inline-block mb-4 relative">
+          <span class="text-7xl sm:text-8xl inline-block text-glow-animate animate-flicker select-none">☢</span>
+          <div class="absolute inset-0 rounded-full bg-amber-500/10 blur-2xl -z-10" />
+        </div>
+        <h1 class="text-5xl sm:text-6xl font-extrabold mb-2 tracking-[0.15em] uppercase text-glow text-foreground">
+          БУНКЕР
+        </h1>
+        <p class="inline-block rounded-full px-4 py-1.5 text-amber-500/70 text-sm border border-amber-900/30 bg-amber-950/20 font-mono">
+          &gt; хто виживе після катастрофи? _
         </p>
       </div>
 
-      <Card class="gap-4 p-5">
+      <Card class="gap-4 p-5 border-amber-900/30 bg-card/80 backdrop-blur-sm border-glow">
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="text-xs text-muted-foreground">твій нікнейм</label>
+            <label class="text-xs text-amber-500/60 uppercase tracking-wider">твій нікнейм</label>
             <span
               :class="[
-                'text-xs tabular-nums',
+                'text-xs tabular-nums font-mono',
                 nicknameInput.length < 2 || nicknameInput.length > 12 ? 'text-destructive' : 'text-muted-foreground'
               ]"
             >
@@ -140,7 +146,7 @@ function onRoomCodeInput(val: string) {
 
         <Button class="w-full" size="lg" :disabled="isLoading" @click="handleCreate">
           <Loader2 v-if="isLoading && !showJoin" class="animate-spin size-4 mr-2" />
-          створити кімнату 🏠
+          створити кімнату
         </Button>
 
         <div class="h-10">
@@ -164,10 +170,10 @@ function onRoomCodeInput(val: string) {
         </div>
       </Card>
 
-      <p class="text-center text-xs text-muted-foreground">
+      <p class="text-center text-xs text-muted-foreground font-mono">
         збери друзів, отримай характеристики
         <br />
-        і переконай що ти вартий бункера! 🏚️
+        і переконай що ти вартий бункера
       </p>
     </div>
   </div>
