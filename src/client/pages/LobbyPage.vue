@@ -71,7 +71,7 @@ watch(() => game.phase, (phase) => {
         </button>
         <div class="flex items-center gap-2">
           <Dialog>
-            <template #trigger>
+            <template #trigger-content>
               <button class="text-muted-foreground hover:text-amber-500 transition-colors cursor-pointer">
                 <Settings class="size-5" />
               </button>

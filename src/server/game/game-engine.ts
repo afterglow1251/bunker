@@ -235,6 +235,32 @@ export const gameEngine = {
     )
   },
 
+  // ── Host Discussion Controls ──
+
+  endDiscussion(room: Room, playerId: string): boolean {
+    if (room.hostId !== playerId) return false
+    if (room.phase !== 'discussion') return false
+    timerManager.clear(room.code)
+    this.startAccusationSpeeches(room)
+    return true
+  },
+
+  addDiscussionTime(room: Room, playerId: string, seconds: number): boolean {
+    if (room.hostId !== playerId) return false
+    if (room.phase !== 'discussion') return false
+    const remaining = timerManager.addTime(room.code, seconds)
+    broadcast(room.code, { type: 'DISCUSSION_TIME_ADDED', payload: { secondsRemaining: remaining } })
+    return true
+  },
+
+  cancelDiscussionTimer(room: Room, playerId: string): boolean {
+    if (room.hostId !== playerId) return false
+    if (room.phase !== 'discussion') return false
+    timerManager.clear(room.code)
+    broadcast(room.code, { type: 'DISCUSSION_TIMER_CANCELLED', payload: {} })
+    return true
+  },
+
   // ── Accusation Speeches ──
 
   startAccusationSpeeches(room: Room) {

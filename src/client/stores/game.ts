@@ -38,6 +38,7 @@ export const useGameStore = defineStore('game', () => {
   const speechTotalSpeakers = ref(0)
   const pendingDoubleElimination = ref(false)
   const allPlayersData = ref<HostPlayerData[] | null>(null)
+  const timerCancelled = ref(false)
 
   // ── computed ──
   const isHost = computed(() => room.value?.hostId === playerId.value)
@@ -137,6 +138,7 @@ export const useGameStore = defineStore('game', () => {
       case 'DISCUSSION_PHASE':
         phase.value = 'discussion'
         timer.value = msg.payload.timeLimit
+        timerCancelled.value = false
         break
 
       case 'VOTING_PHASE':
@@ -196,6 +198,15 @@ export const useGameStore = defineStore('game', () => {
 
       case 'TIMER_TICK':
         timer.value = msg.payload.secondsRemaining
+        break
+
+      case 'DISCUSSION_TIME_ADDED':
+        timer.value = msg.payload.secondsRemaining
+        break
+
+      case 'DISCUSSION_TIMER_CANCELLED':
+        timerCancelled.value = true
+        timer.value = 0
         break
 
       case 'SETTINGS_UPDATED':
@@ -291,6 +302,7 @@ export const useGameStore = defineStore('game', () => {
     speechTotalSpeakers.value = 0
     pendingDoubleElimination.value = false
     allPlayersData.value = null
+    timerCancelled.value = false
     ws.setReconnectInfo(null)
   }
 
@@ -301,7 +313,7 @@ export const useGameStore = defineStore('game', () => {
     revoteTargets, gameOverData, isConnected, playerId, roomCode,
     traitsToRevealThisRound, speechPhase, speechSpeakerId,
     speechSpeakerIndex, speechTotalSpeakers, pendingDoubleElimination,
-    allPlayersData,
+    allPlayersData, timerCancelled,
     // computed
     isHost, isMyTurn, myPlayer, alivePlayers, eliminatedPlayers,
     // actions

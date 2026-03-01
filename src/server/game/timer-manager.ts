@@ -41,6 +41,14 @@ export const timerManager = {
     }
   },
 
+  addTime(roomCode: string, seconds: number): number {
+    const timer = timers.get(roomCode)
+    if (timer) {
+      timer.remaining += seconds
+    }
+    return timer?.remaining ?? 0
+  },
+
   getRemaining(roomCode: string): number {
     return timers.get(roomCode)?.remaining ?? 0
   },

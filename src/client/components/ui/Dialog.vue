@@ -13,10 +13,11 @@ import { cn } from '@/lib/utils'
 import { X } from 'lucide-vue-next'
 
 const props = withDefaults(defineProps<{
-  open?: boolean
+  open?: boolean | null
   contentClass?: string
   showCloseButton?: boolean
 }>(), {
+  open: null,
   showCloseButton: true,
 })
 
@@ -26,7 +27,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <DialogRoot :open="open" @update:open="emit('update:open', $event)">
+  <DialogRoot v-bind="open !== null ? { open } : {}" @update:open="emit('update:open', $event)">
     <slot name="trigger">
       <DialogTrigger as-child>
         <slot name="trigger-content" />

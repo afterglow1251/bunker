@@ -252,6 +252,36 @@ export const wsHandler = new Elysia()
           break
         }
 
+        case 'END_DISCUSSION': {
+          if (!data.playerId || !data.roomCode) return
+          const room = roomManager.getRoom(data.roomCode)
+          if (!room) return
+          if (!gameEngine.endDiscussion(room, data.playerId)) {
+            ws.send(JSON.stringify({ type: 'ERROR', payload: { message: 'Не можна завершити обговорення' } }))
+          }
+          break
+        }
+
+        case 'ADD_DISCUSSION_TIME': {
+          if (!data.playerId || !data.roomCode) return
+          const room = roomManager.getRoom(data.roomCode)
+          if (!room) return
+          if (!gameEngine.addDiscussionTime(room, data.playerId, msg.payload.seconds)) {
+            ws.send(JSON.stringify({ type: 'ERROR', payload: { message: 'Не можна додати час' } }))
+          }
+          break
+        }
+
+        case 'CANCEL_DISCUSSION_TIMER': {
+          if (!data.playerId || !data.roomCode) return
+          const room = roomManager.getRoom(data.roomCode)
+          if (!room) return
+          if (!gameEngine.cancelDiscussionTimer(room, data.playerId)) {
+            ws.send(JSON.stringify({ type: 'ERROR', payload: { message: 'Не можна скасувати таймер' } }))
+          }
+          break
+        }
+
         case 'UPDATE_SETTINGS': {
           if (!data.playerId || !data.roomCode) return
           if (roomManager.updateSettings(data.roomCode, data.playerId, msg.payload.settings)) {

@@ -13,6 +13,9 @@ export type ClientMessage =
   | { type: 'UPDATE_SETTINGS'; payload: { settings: Partial<RoomSettings> } }
   | { type: 'SKIP_SPEECH'; payload: Record<string, never> }
   | { type: 'TRANSFER_HOST'; payload: { newHostId: string } }
+  | { type: 'END_DISCUSSION'; payload: Record<string, never> }
+  | { type: 'ADD_DISCUSSION_TIME'; payload: { seconds: number } }
+  | { type: 'CANCEL_DISCUSSION_TIMER'; payload: Record<string, never> }
 
 // Server → Client
 export type ServerMessage =
@@ -40,6 +43,8 @@ export type ServerMessage =
   | { type: 'VOTE_PASS_RESULT'; payload: { passed: boolean } }
   | { type: 'ERROR'; payload: { message: string } }
   | { type: 'HOST_CHANGED'; payload: { newHostId: string } }
+  | { type: 'DISCUSSION_TIME_ADDED'; payload: { secondsRemaining: number } }
+  | { type: 'DISCUSSION_TIMER_CANCELLED'; payload: Record<string, never> }
   | { type: 'PLAYER_RECONNECTED'; payload: { playerId: string } }
   | { type: 'PLAYER_DISCONNECTED'; payload: { playerId: string } }
 

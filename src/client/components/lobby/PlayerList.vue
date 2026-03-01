@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { X } from 'lucide-vue-next'
+import { X, ArrowRightLeft } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { useGameStore } from '@/stores/game'
 import Dialog from '@/components/ui/Dialog.vue'
@@ -10,7 +10,8 @@ import Button from '@/components/ui/Button.vue'
 
 const game = useGameStore()
 
-const players = computed(() => game.room?.players ?? [])
+const hostPlayer = computed(() => game.room?.players.find(p => p.isHost) ?? null)
+const gamePlayers = computed(() => game.room?.players.filter(p => !p.isHost) ?? [])
 
 const transferTarget = ref<{ id: string; nickname: string } | null>(null)
 const transferDialogOpen = ref(false)
@@ -35,35 +36,48 @@ function confirmTransfer() {
 </script>
 
 <template>
-  <div class="space-y-1 min-h-[52px]">
+  <div class="space-y-2 min-h-[52px]">
+    <!-- Host section -->
     <div
-      v-for="player in players"
-      :key="player.id"
-      class="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm bg-amber-950/20 border border-amber-900/15 font-medium"
+      v-if="hostPlayer"
+      class="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm bg-amber-950/30 border border-amber-500/20 font-medium"
     >
-      <span class="truncate">
-        {{ player.nickname }}
-      </span>
-      <span v-if="player.isHost" class="text-[10px] ml-auto text-glow">&#x1F451;</span>
-      <button
-        v-if="game.isHost && !player.isHost && player.id !== game.playerId"
-        class="text-muted-foreground hover:text-amber-500 transition-colors cursor-pointer text-xs"
-        :aria-label="`Передати коронку ${player.nickname}`"
-        @click="openTransferDialog(player.id, player.nickname)"
-      >
-        &#x1F451;
-      </button>
-      <button
-        v-if="game.isHost && !player.isHost && player.id !== game.playerId"
-        class="ml-auto text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
-        :aria-label="`Вигнати ${player.nickname}`"
-        @click="handleKick(player.id)"
-      >
-        <X class="size-3.5" />
-      </button>
+      <span class="text-[10px] text-glow">&#x1F451;</span>
+      <span class="text-xs text-amber-500/60 uppercase tracking-wider">Ведучий:</span>
+      <span class="truncate text-amber-400">{{ hostPlayer.nickname }}</span>
     </div>
 
-    <p v-if="players.length === 0" class="text-sm text-muted-foreground text-center py-4 font-mono">
+    <!-- Players list -->
+    <div class="space-y-1">
+      <div
+        v-for="player in gamePlayers"
+        :key="player.id"
+        class="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm bg-amber-950/20 border border-amber-900/15 font-medium"
+      >
+        <span class="truncate">
+          {{ player.nickname }}
+        </span>
+        <div v-if="game.isHost && player.id !== game.playerId" class="ml-auto flex items-center gap-1">
+          <button
+            class="text-muted-foreground hover:text-amber-500 transition-colors cursor-pointer text-[10px] flex items-center gap-0.5 px-1 py-0.5 rounded hover:bg-amber-950/30"
+            :aria-label="`Передати ведучого ${player.nickname}`"
+            @click="openTransferDialog(player.id, player.nickname)"
+          >
+            <ArrowRightLeft class="size-3" />
+            <span>Передати</span>
+          </button>
+          <button
+            class="text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+            :aria-label="`Вигнати ${player.nickname}`"
+            @click="handleKick(player.id)"
+          >
+            <X class="size-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <p v-if="gamePlayers.length === 0" class="text-sm text-muted-foreground text-center py-4 font-mono">
       Очікування гравців...
     </p>
 
